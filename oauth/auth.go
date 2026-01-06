@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	server "invoicefetch/httpServer"
+	server "invoice_fetch/httpServer"
 	"os"
 
 	"golang.org/x/oauth2"
