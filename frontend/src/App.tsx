@@ -1,40 +1,129 @@
-import { useState } from "react";
-import logo from "./assets/images/logo-universal.png";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
-import { Greet } from "../wailsjs/go/main/App";
+import { EmailOptions } from "./lib/emails/options";
+import { cn } from "./utils/cn";
+import auth from "@/assets/images/actions/auth.png";
+import verify from "@/assets/images/actions/verify.png";
+import fetch from "@/assets/images/actions/fetch.png";
+import { Auth } from "@/../wailsjs/go/main/App";
+
+const authenticate = async (provider: EmailOptions[number]["title"]) => {
+  console.log("alo?");
+  const { ok, url, error } = await Auth(provider);
+  console.log(ok, url, error);
+};
 
 function App() {
-  const [resultText, setResultText] = useState(
-    "Please enter your name below 👇"
-  );
-  const [name, setName] = useState("");
-  const updateName = (e: any) => setName(e.target.value);
-  const updateResultText = (result: string) => setResultText(result);
+  const [activeEmail, setActiveEmail] = useState<
+    EmailOptions[number]["title"] | undefined
+  >(undefined);
 
-  function greet() {
-    Greet(name).then(updateResultText);
-  }
+  const emailCoverRef = useRef<HTMLDivElement | null>(null);
+  const mainDivRef = useRef<HTMLDivElement | null>(null);
+  const emailOptionsRef = useRef<HTMLButtonElement[]>([]);
+
+  const addEmailOptionRef = (el: HTMLButtonElement | null) => {
+    if (el) emailOptionsRef.current.push(el);
+  };
+
+  useEffect(() => {
+    const emailEl = emailOptionsRef.current[0];
+    const mainBoxEl = mainDivRef.current;
+    if (!emailCoverRef.current || !emailEl || !mainBoxEl) return;
+    const { left: mainBoxLeft } = mainBoxEl.getBoundingClientRect();
+    const { left, width } = emailEl.getBoundingClientRect();
+
+    const totalLeft = left - mainBoxLeft;
+    emailCoverRef.current.style.left = `${totalLeft}px`;
+    emailCoverRef.current.style.width = `${width}px`;
+    setActiveEmail("Gmail");
+  }, []);
+
+  const selectEmail = (title: EmailOptions[number]["title"], ind: number) => {
+    if (!emailCoverRef.current) return;
+    const emailEl = emailOptionsRef.current[ind];
+    const mainBoxEl = mainDivRef.current;
+    if (!emailEl || !mainBoxEl) return;
+
+    const { left: mainBoxLeft } = mainBoxEl.getBoundingClientRect();
+    const { left, width } = emailEl.getBoundingClientRect();
+
+    const totalLeft = left - mainBoxLeft;
+    emailCoverRef.current.style.left = `${totalLeft}px`;
+    emailCoverRef.current.style.width = `${width}px`;
+
+    setActiveEmail(title);
+  };
 
   return (
-    <div id="App">
-      <img src={logo} id="logo" alt="logo" />
-      <div id="result" className="result">
-        {resultText}
+    <main>
+      <div className="pt-[5%] w-11/12 mx-auto flex h-screen relative">
+        <div className="flex flex-col gap-1 flex-1 items-start">
+          <div className="flex flex-col gap-1 text-start">
+            <span className="text-4xl font-bold">Invoice Fetcher</span>
+            <span className="opacity-80 font-light">
+              Your ultimate email fetcher
+            </span>
+          </div>
+          <div
+            className="flex items-center h-10 relative w-fit mt-2"
+            ref={mainDivRef}
+          >
+            <div
+              className="absolute w-full h-full pointer-events-none bg-white duration-200 rounded-tl-2xl rounded-br-2xl"
+              ref={emailCoverRef}
+            />
+            {EmailOptions.map((opt, ind) => {
+              const isActive = activeEmail === opt.title;
+              const isFirst = ind === 0;
+              const isLast = ind === EmailOptions.length - 1;
+              return (
+                <button
+                  className={cn(
+                    "flex items-center gap-2 text-white h-10 bg-black/60 px-6 duration-200 disabled:opacity-60",
+                    isActive ? "text-black" : "text-white",
+                    isFirst ? "rounded-l-2xl" : "",
+                    isLast ? "rounded-r-2xl" : ""
+                  )}
+                  key={opt.title}
+                  onClick={() => selectEmail(opt.title, ind)}
+                  ref={(el) => addEmailOptionRef(el)}
+                  disabled={opt.disabled}
+                >
+                  <img src={opt.icon} alt="" className="w-6 z-10" />
+                  <span className="z-10">{opt.title}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex flex-col items-start mt-12 gap-2 w-48">
+            <span className="text-2xl font-semibold mb-2">
+              What to do next?
+            </span>
+            <button
+              className="py-3 px-5 w-full bg-background hover:bg-opacity-40 duration-200 rounded-md flex items-center gap-6"
+              onClick={() => authenticate("Gmail")}
+            >
+              <img src={auth} className="w-6" />
+              Authenticate
+            </button>
+            <button className="py-3 px-5 w-full bg-background hover:bg-opacity-40 duration-200 rounded-md flex items-center gap-6">
+              <img src={verify} className="w-6" />
+              Verify Email
+            </button>
+            <button className="py-3 px-5 w-full bg-background hover:bg-opacity-40 duration-200 rounded-md flex items-center gap-6">
+              <img src={fetch} className="w-6" />
+              Fetch Emails
+            </button>
+          </div>
+        </div>
+        <div className="flex-1">Output Here</div>
       </div>
-      <div id="input" className="input-box">
-        <input
-          id="name"
-          className="input"
-          onChange={updateName}
-          autoComplete="off"
-          name="input"
-          type="text"
-        />
-        <button className="btn" onClick={greet}>
-          Greet
-        </button>
+      <div className="absolute bottom-1 left-[1%] w-[98%] mx-auto flex justify-between">
+        <span>In active development</span>
+        <span>V1.0</span>
       </div>
-    </div>
+    </main>
   );
 }
 
