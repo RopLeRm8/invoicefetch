@@ -1,16 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
-import { EmailOptions } from "./lib/emails/options";
+import { EmailOptions } from "./lib/config/emails/options";
 import { cn } from "./utils/cn";
 import auth from "@/assets/images/actions/auth.png";
 import verify from "@/assets/images/actions/verify.png";
 import fetch from "@/assets/images/actions/fetch.png";
 import { Auth } from "@/../wailsjs/go/main/App";
+import { EventsOn } from "@/../wailsjs/runtime/runtime";
 
 const authenticate = async (provider: EmailOptions[number]["title"]) => {
-  console.log("alo?");
   const { ok, url, error } = await Auth(provider);
-  console.log(ok, url, error);
 };
 
 function App() {
@@ -37,6 +36,10 @@ function App() {
     emailCoverRef.current.style.left = `${totalLeft}px`;
     emailCoverRef.current.style.width = `${width}px`;
     setActiveEmail("Gmail");
+
+    EventsOn("auth:success", () => {
+      console.log("OPA YAFE!");
+    });
   }, []);
 
   const selectEmail = (title: EmailOptions[number]["title"], ind: number) => {
