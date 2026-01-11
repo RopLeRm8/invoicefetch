@@ -4,4 +4,10 @@ import {main} from '../models';
 
 export function Auth(arg1:string):Promise<main.AuthResult>;
 
+export function GetActiveEmail():Promise<main.ActiveEmail>;
+
 export function Greet(arg1:string):Promise<string>;
+
+export function Logout():Promise<main.Logout>;
+
+export function Verify():Promise<main.Verify>;

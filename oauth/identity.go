@@ -3,7 +3,7 @@ package oauth
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"os"
 
 	"golang.org/x/oauth2"
@@ -12,11 +12,11 @@ import (
 	"google.golang.org/api/option"
 )
 
-func VerifyIdentity() (*string, error) {
+func GetIdentity() (string, error) {
 	tokenBytes, err := os.ReadFile("token.json")
 	if err != nil {
-		fmt.Println("Couldn't find token.json file. Make sure you login first using auth option.")
-		return nil, err
+		tokenErr := errors.New("Couldn't find token.json file. Make sure you login first using auth option.")
+		return "", tokenErr
 	}
 
 	var token oauth2.Token
@@ -25,7 +25,7 @@ func VerifyIdentity() (*string, error) {
 	creds, errCreds := os.ReadFile("credentials.json")
 
 	if errCreds != nil {
-		return nil, errCreds
+		return "", errCreds
 	}
 
 	ctx := context.Background()
@@ -35,6 +35,6 @@ func VerifyIdentity() (*string, error) {
 	service, _ := gmail.NewService(ctx, option.WithHTTPClient(client))
 	profile, _ := service.Users.GetProfile("me").Do()
 
-	return &profile.EmailAddress, nil
+	return profile.EmailAddress, nil
 
 }

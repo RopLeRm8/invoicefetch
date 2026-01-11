@@ -6,11 +6,18 @@ import (
 	"errors"
 	server "invoice_fetch/httpServer"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/gmail/v1"
+)
+
+var (
+	lastGeneratedUrl time.Time
+	genMu            sync.Mutex
 )
 
 type EmailLogin struct {
@@ -34,18 +41,26 @@ func EMAILogin() EmailLogin {
 	var _ *oauth2.Config
 	var _ = google.Endpoint
 
+	genMu.Lock()
+	defer genMu.Unlock()
+
+	if time.Since(lastGeneratedUrl) < time.Minute*10 {
+		return EmailLogin{url: "", err: errors.New("Rate limited")}
+	}
+	lastGeneratedUrl = time.Now()
+
 	_, err := os.Stat("token.json")
 	fileExists := err == nil
 
 	if fileExists {
 		fileExistsErr := errors.New("Token file already exists, if you wish to login as someone else, delete it!")
-		return EmailLogin{googleCreds: nil, url: "", err: fileExistsErr}
+		return EmailLogin{url: "", err: fileExistsErr}
 	}
 
 	creds, errCreds := os.ReadFile("credentials.json")
 
 	if errCreds != nil {
-		return EmailLogin{googleCreds: nil, url: "", err: errCreds}
+		return EmailLogin{url: "", err: errCreds}
 	}
 
 	scope := gmail.GmailReadonlyScope
@@ -70,5 +85,22 @@ func SaveToken(ctx context.Context, codeCh chan string, googleCreds *oauth2.Conf
 	os.Create("token.json")
 	os.WriteFile("token.json", bytes, 0600)
 
-	runtime.EventsEmit(ctx, "auth:success")
+	email, err := GetIdentity()
+
+	if err != nil {
+		return
+	}
+
+	runtime.EventsEmit(ctx, "auth:success", map[string]interface{}{
+		"email": email,
+	})
+}
+
+func Logout(ctx context.Context) error {
+	err := os.Remove("token.json")
+	if err != nil {
+		return err
+	}
+	return nil
+
 }

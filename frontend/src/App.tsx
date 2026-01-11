@@ -5,17 +5,20 @@ import { cn } from "./utils/cn";
 import auth from "@/assets/images/actions/auth.png";
 import verify from "@/assets/images/actions/verify.png";
 import fetch from "@/assets/images/actions/fetch.png";
-import { Auth } from "@/../wailsjs/go/main/App";
+import logout from "@/assets/images/actions/logout.png";
+import { Auth, GetActiveEmail, Logout } from "@/../wailsjs/go/main/App";
 import { EventsOn } from "@/../wailsjs/runtime/runtime";
 
 const authenticate = async (provider: EmailOptions[number]["title"]) => {
   const { ok, url, error } = await Auth(provider);
+  console.log(url, error);
 };
 
 function App() {
-  const [activeEmail, setActiveEmail] = useState<
+  const [emailOption, setEmailOption] = useState<
     EmailOptions[number]["title"] | undefined
   >(undefined);
+  const [activeEmail, setActiveEmail] = useState<string | undefined>(undefined);
 
   const emailCoverRef = useRef<HTMLDivElement | null>(null);
   const mainDivRef = useRef<HTMLDivElement | null>(null);
@@ -23,6 +26,12 @@ function App() {
 
   const addEmailOptionRef = (el: HTMLButtonElement | null) => {
     if (el) emailOptionsRef.current.push(el);
+  };
+
+  const EmailLogout = async () => {
+    const { error } = await Logout();
+    if (error) console.log(error);
+    setActiveEmail(undefined);
   };
 
   useEffect(() => {
@@ -35,11 +44,20 @@ function App() {
     const totalLeft = left - mainBoxLeft;
     emailCoverRef.current.style.left = `${totalLeft}px`;
     emailCoverRef.current.style.width = `${width}px`;
-    setActiveEmail("Gmail");
+    setEmailOption("Gmail");
 
-    EventsOn("auth:success", () => {
-      console.log("OPA YAFE!");
+    EventsOn("auth:success", ({ email }: { email: string }) => {
+      setActiveEmail(email);
     });
+  }, []);
+
+  useEffect(() => {
+    const getEmail = async () => {
+      const { email, error } = await GetActiveEmail();
+      if (error) return;
+      setActiveEmail(email);
+    };
+    getEmail();
   }, []);
 
   const selectEmail = (title: EmailOptions[number]["title"], ind: number) => {
@@ -55,7 +73,7 @@ function App() {
     emailCoverRef.current.style.left = `${totalLeft}px`;
     emailCoverRef.current.style.width = `${width}px`;
 
-    setActiveEmail(title);
+    setEmailOption(title);
   };
 
   return (
@@ -77,7 +95,7 @@ function App() {
               ref={emailCoverRef}
             />
             {EmailOptions.map((opt, ind) => {
-              const isActive = activeEmail === opt.title;
+              const isActive = emailOption === opt.title;
               const isFirst = ind === 0;
               const isLast = ind === EmailOptions.length - 1;
               return (
@@ -104,8 +122,9 @@ function App() {
               What to do next?
             </span>
             <button
-              className="py-3 px-5 w-full bg-background hover:bg-opacity-40 duration-200 rounded-md flex items-center gap-6"
+              className="py-3 px-5 w-full bg-background hover:bg-opacity-40 duration-200 rounded-md flex items-center gap-6 disabled:opacity-70"
               onClick={() => authenticate("Gmail")}
+              disabled={!!activeEmail}
             >
               <img src={auth} className="w-6" />
               Authenticate
@@ -118,9 +137,26 @@ function App() {
               <img src={fetch} className="w-6" />
               Fetch Emails
             </button>
+            <button
+              className="py-3 px-5 w-full bg-background hover:bg-opacity-40 duration-200 rounded-md flex items-center gap-6 disabled:opacity-70"
+              onClick={EmailLogout}
+              disabled={!activeEmail}
+            >
+              <img src={logout} className="w-6" />
+              Logout
+            </button>
           </div>
         </div>
-        <div className="flex-1">Output Here</div>
+        <div className="flex-1 ">
+          <div className="w-full bg-background/60 h-[90%] shadow-sm shadow-black rounded-md">
+            <div className="w-full h-[10%] bg-background flex justify-center items-center shadow-sm shadow-black">
+              {activeEmail ? `Emails for ${activeEmail}` : "Not logged in"}
+            </div>
+            <div className="flex items-center h-[90%] justify-center">
+              Output will be shown here
+            </div>
+          </div>
+        </div>
       </div>
       <div className="absolute bottom-1 left-[1%] w-[98%] mx-auto flex justify-between">
         <span>In active development</span>

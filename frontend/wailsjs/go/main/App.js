@@ -6,6 +6,18 @@ export function Auth(arg1) {
   return window['go']['main']['App']['Auth'](arg1);
 }
 
+export function GetActiveEmail() {
+  return window['go']['main']['App']['GetActiveEmail']();
+}
+
 export function Greet(arg1) {
   return window['go']['main']['App']['Greet'](arg1);
+}
+
+export function Logout() {
+  return window['go']['main']['App']['Logout']();
+}
+
+export function Verify() {
+  return window['go']['main']['App']['Verify']();
 }
