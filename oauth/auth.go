@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	server "invoice_fetch/httpServer"
+	"net/url"
 	"os"
 	"sync"
 	"time"
@@ -67,9 +68,10 @@ func EMAILogin() EmailLogin {
 	googleCreds, _ := google.ConfigFromJSON(creds, scope)
 	googleCreds.RedirectURL = "http://localhost:8080/auth"
 
-	url := googleCreds.AuthCodeURL("ahshit", oauth2.AccessTypeOffline, oauth2.ApprovalForce)
+	authUrl := googleCreds.AuthCodeURL("ahshit", oauth2.AccessTypeOffline, oauth2.ApprovalForce)
+	encodedURL := url.QueryEscape(authUrl)
 
-	return EmailLogin{googleCreds, url, nil}
+	return EmailLogin{googleCreds: googleCreds, url: encodedURL, err: nil}
 }
 
 func SaveToken(ctx context.Context, codeCh chan string, googleCreds *oauth2.Config) {

@@ -11,7 +11,8 @@ import { EventsOn } from "@/../wailsjs/runtime/runtime";
 
 const authenticate = async (provider: EmailOptions[number]["title"]) => {
   const { ok, url, error } = await Auth(provider);
-  console.log(url, error);
+  const decodedURI = decodeURIComponent(url)
+  console.log(decodedURI, error);
 };
 
 function App() {
